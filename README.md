@@ -38,7 +38,7 @@ Le serveur est configuré pour  se connecter à une base de données MongoDB et 
 
 ### Album
 
-####parametre
+#### parametre
 ```javascript
 {
   title: String,        // Required
