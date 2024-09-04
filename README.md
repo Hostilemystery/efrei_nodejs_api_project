@@ -1,4 +1,4 @@
-#NANJI ENGA Gedeon Freddy
+# NANJI ENGA Gedeon Freddy
 ---
 
 # Documentation de l'API pour la Gestion des Albums et des Photos
@@ -38,7 +38,7 @@ Le serveur est configuré pour  se connecter à une base de données MongoDB et 
 
 ### Album
 
-###parametre
+####parametre
 ```javascript
 {
   title: String,        // Required
@@ -46,7 +46,7 @@ Le serveur est configuré pour  se connecter à une base de données MongoDB et 
   photos: [Object_ID]   // Array of Photo IDs, Optional
 }
 ```
-### Response :
+#### Response :
 ```javascript
   {
     _id: Object_ID,
@@ -58,7 +58,7 @@ Le serveur est configuré pour  se connecter à une base de données MongoDB et 
 
 
 ### Photos
-###parametre
+#### parametre
 ```javascript
 {
   title: String,        // Required
@@ -67,7 +67,7 @@ Le serveur est configuré pour  se connecter à une base de données MongoDB et 
   album: [Object_ID]   //  Required
 }
 ```
-### Response :
+#### Response :
 ```javascript
   {
     _id: Object_ID,
