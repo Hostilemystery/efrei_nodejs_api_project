@@ -9,9 +9,17 @@ const compression = require('compression')
 const cors = require('cors')
 const helmet = require('helmet')
 
+//Limit Ip 
+const rateLimit = require('express-rate-limit');
+
 // Core
 const config = require('./config.js')
 const routes = require('./controllers/routes.js')
+
+require('dotenv').config(); 
+const fs = require('fs');
+const https = require('https');
+
 
 /**
  * Server
@@ -60,11 +68,21 @@ module.exports = class Server {
    * Middleware
    */
   middleware () {
+
+    //IP limiter 
+    const limiter = rateLimit(config.rateLimit);
+  
+    //On utilise le limiteur sur toutes les requetes
+    // this.app.use(limiter);
+
     this.app.use(compression())
     this.app.use(cors())
     this.app.use(bodyParser.urlencoded({ 'extended': true }))
     this.app.use(bodyParser.json())
   }
+
+
+ 
 
   /**
    * Routes
@@ -73,8 +91,8 @@ module.exports = class Server {
     
     new routes.Users(this.app, this.connect, this.authenticateToken)
     new routes.Auth(this.app)
-    new routes.Albums(this.app,this.connect)
-    new routes.Photos(this.app,this.connect)
+    new routes.Albums(this.app,this.connect,this.authenticateToken)
+    new routes.Photos(this.app,this.connect,this.authenticateToken)
 
     // If route not exist
     this.app.use((req, res) => {
@@ -93,19 +111,51 @@ module.exports = class Server {
     this.app.disable('x-powered-by')
   }
 
+  // authenticateToken(req, res, next) {
+  //   const token = req.headers['authorization']
+
+  //   if (!token) return res.sendStatus(403)
+
+  //   // jwt.verify(token, 'webforce3', (err, user) => {
+  //   //   if (err) return res.sendStatus(401)
+
+  //   //   req.user = user
+
+  //   //   next()
+  //   // })
+
+  //   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  //   if (err) return res.sendStatus(401); // If the token is invalid or expired, return 401 Unauthorized
+
+  //   req.user = user;  // Attach the decoded token data (e.g., user info) to the request object
+
+  //   next();  // Proceed to the next middleware or route handler
+  // });
+  // }
+
+
+   // Middleware to protect routes
   authenticateToken(req, res, next) {
-    const token = req.headers['authorization']
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; 
 
-    if (!token) return res.sendStatus(403)
+    if (!token) {
+      return res.status(403).json({ message: 'Token is required' }); 
+    }
 
-    jwt.verify(token, 'webforce3', (err, user) => {
-      if (err) return res.sendStatus(401)
+    
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.status(401).json({ message: 'Invalid or expired token' }); 
+      }
 
-      req.user = user
-
-      next()
-    })
+      req.user = user;  
+      next();  
+    });
   }
+
+
+  
 
   /**
    * Run
@@ -116,7 +166,18 @@ module.exports = class Server {
       this.security()
       this.middleware()
       this.routes()
-      this.app.listen(this.config.port)
+
+     // Load SSL certificate and key from environment variables
+      const privateKey = fs.readFileSync(process.env.SSL_KEY_PATH, 'utf8');
+      const certificate = fs.readFileSync(process.env.SSL_CERT_PATH, 'utf8');
+
+      const credentials = { key: privateKey, cert: certificate };
+
+      // Create an HTTPS server
+      https.createServer(credentials, this.app).listen(this.config.port, () => {
+        console.log(`Server running on https://localhost:${this.config.port}`);
+      });
+      // this.app.listen(this.config.port)
     } catch (err) {
       console.error(`[ERROR] Server -> ${err}`)
     }

@@ -1,40 +1,36 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 
 const Auth = class Auth {
-  /**
-   * @constructor
-   * @param {Object} app
-   */
-  constructor (app) {
-    this.app = app
-
-    this.run()
+  constructor(app) {
+    this.app = app;
+    this.run();
   }
 
-  auth () {
-    this.app.get('/auth/', (req, res) => {
+  /**
+   * Token generation route (example: login)
+   */
+  auth() {
+    this.app.post('/auth/', (req, res) => {
       try {
-        const { name, role } = req.body
-        const token = jwt.sign({ name, role }, 'webforce3', { expiresIn: '24h' })
+        const { firstname, password } = req.body;
 
-        res.status(200).json({ token })
+        // Sign a JWT using the secret key from .env
+        const token = jwt.sign({ firstname, password }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+        // Send the token to the client
+        res.status(200).json({ token });
       } catch (err) {
-        console.error(`[ERROR] users/:id -> ${err}`)
-
-        res.status(400).json({
-          code: 400,
-          message: 'Bad request'
-        })
+        console.error(`[ERROR] auth -> ${err}`);
+        res.status(400).json({ message: 'Bad request' });
       }
-    })
+    });
   }
 
-  /**
-   * Run
-   */
-  run () {
-    this.auth()
+  run() {
+    this.auth();
   }
-}
+};
 
-module.exports = Auth
+module.exports = Auth;
+
+
